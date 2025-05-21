@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta: Edad y Velocidad de Lectura</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], select, input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .reading-section {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .timer {
+            font-size: 24px;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #readingText {
+            height: 200px;
+            overflow-y: scroll;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .reading-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .admin-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            display: none; /* Oculto por defecto */
+        }
+        #responsesList {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .admin-login {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Encuesta: Edad y Velocidad de Lectura</h1>
+    
+    <div class="instructions">
+        <h2>Instrucciones:</h2>
+        <p>Esta breve encuesta interactiva! Estamos investigando cómo la edad influye en la velocidad de lectura. Este es un proyecto educativo para explorar las capacidades de lectura de personas de diferentes edades.</p>
+        <ol>
+            <li>Asegúrate de estar en un lugar tranquilo y sin distracciones.</li>
+            <li>Responder ambas preguntas</li>
+            <li>Lee el texto tan rápido y claramente como puedas, pero sin saltarte palabras.</li>
+            <li>Pulsa "Iniciar" para empezar el cronometro y luego haz clic en "Finalizar" tan pronto como termines de leer.</li>
+        </ol>
+    </div>
+    
+    <form id="surveyForm">
+        <div class="form-group">
+            <label for="age">Edad:</label>
+            <input type="number" id="age" name="age" min="5" max="120" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="education">Nivel académico:</label>
+            <select id="education" name="education" required>
+                <option value="">Seleccione una opción</option>
+                <option value="Primaria">Primaria</option>
+                <option value="Primaria incompleta">Primaria incompleta</option>
+                <option value="Secundaria">Secundaria</option>
+                <option value="Secundaria incompleta">Secundaria incompleta</option>
+                <option value="Preparatoria/Bachillerato">Preparatoria/Bachillerato</option>
+                <option value="Universidad">Universidad</option>
+                <option value="Universidad incompleta">Universidad incompleta</option>
+                <option value="Postgrado">Postgrado</option>
+            </select>
+        </div>
+        
+        <div class="reading-section">
+            <h2>Prueba de lectura</h2>
+            
+            <div class="timer" id="timer">00:00:00</div>
+            
+            <div class="reading-controls">
+                <button type="button" id="startBtn">Comenzar lectura</button>
+                <button type="button" id="endBtn" disabled>Finalizar lectura</button>
+            </div>
+            
+            <div id="readingText">
+                <p>La Inteligencia Artificial (IA) ofrece un potencial significativo para abordar los desafíos principales en la educación, promover la innovación en las prácticas pedagógicas y acelerar el progreso hacia el Objetivo de Desarrollo Sostenible (ODS), Sin embargo, los rápidos avances tecnológicos traen consigo riesgos que deben ser gestionados a través de marcos regulatorios adecuados. La UNESCO apoya a los Estados Miembros para aprovechar las tecnologías de IA en el contexto educativo, asegurando que se respalden principios fundamentales de inclusión y equidad El enfoque de la UNESCO se basa en un uso ético y centrado en el ser humano de la IA, promoviendo su papel en la reducción de desigualdades en el acceso al conocimiento, la diversidad cultural y la investigación. Además, busca evitar que la IA amplíe brechas tecnológicas entre países. Bajo el Consenso de Beijing, la UNESCO publicó la guía Inteligencia Artificial: Guía para las personas a cargo de formular políticas para ayudar a los responsables educativos a comprender y gestionar las oportunidades y desafíos asociados con la IA Estas iniciativas buscan garantizar un acceso equitativo y beneficioso a las innovaciones tecnológicas. (La Inteligencia Artificial En La Educación, 2025).</p>
+                <p>La inteligencia artificial en la educación. (2025, January 17). UNESCO. Recuperado de https://www.unesco.org/es/digital-education/artificial-intelligence</p>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" id="submitBtn">Enviar encuesta</button>
+        </div>
+    </form>
+
+    <!-- Panel de login para administrador -->
+    <div class="admin-login">
+        <button id="toggleAdminBtn">Acceso Administrador</button>
+        <div id="adminLoginForm" style="display:none; margin-top:10px;">
+            <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
+            <button id="loginBtn">Acceder</button>
+        </div>
+    </div>
+
+    <!-- Panel de administración (oculto hasta login) -->
+    <div class="admin-panel" id="adminPanel">
+        <h2>Panel de Administración</h2>
+        <button id="viewResponses">Ver respuestas</button>
+        <button id="exportResponses">Exportar datos</button>
+        <button id="clearResponses">Borrar datos</button>
+        <div id="responsesList"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos principales
+            const startBtn = document.getElementById('startBtn');
+            const endBtn = document.getElementById('endBtn');
+            const timer = document.getElementById('timer');
+            const surveyForm = document.getElementById('surveyForm');
+            
+            // Elementos de administración
+            const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            const adminPanel = document.getElementById('adminPanel');
+            const loginBtn = document.getElementById('loginBtn');
+            const viewResponsesBtn = document.getElementById('viewResponses');
+            const exportResponsesBtn = document.getElementById('exportResponses');
+            const clearResponsesBtn = document.getElementById('clearResponses');
+            const responsesList = document.getElementById('responsesList');
+            
+            // Configuración (cambia esta contraseña por una segura)
+            const ADMIN_PASSWORD = "admin123"; // Cambia esto por tu contraseña
+            
+            let startTime;
+            let timerInterval;
+            let isAdmin = false;
+            
+            // Función para formatear el tiempo
+            function formatTime(ms) {
+                let seconds = Math.floor(ms / 1000);
+                let minutes = Math.floor(seconds / 60);
+                seconds = seconds % 60;
+                let hours = Math.floor(minutes / 60);
+                minutes = minutes % 60;
+                
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Iniciar el cronómetro
+            startBtn.addEventListener('click', function() {
+                const age = document.getElementById('age').value;
+                const education = document.getElementById('education').value;
+                
+                if (!age || !education) {
+                    alert('Por favor responde las preguntas sobre edad y nivel académico antes de comenzar.');
+                    return;
+                }
+                
+                startTime = new Date();
+                startBtn.disabled = true;
+                endBtn.disabled = false;
+                
+                timerInterval = setInterval(function() {
+                    const currentTime = new Date();
+                    const elapsedTime = currentTime - startTime;
+                    timer.textContent = formatTime(elapsedTime);
+                }, 1000);
+            });
+            
+            // Detener el cronómetro
+            endBtn.addEventListener('click', function() {
+                clearInterval(timerInterval);
+                startBtn.disabled = false;
+                endBtn.disabled = true;
+                
+                const endTime = new Date();
+                const readingTime = (endTime - startTime) / 1000;
+                alert(`¡Gracias por participar! Tu tiempo de lectura fue: ${timer.textContent}`);
+            });
+            
+            // Manejar el envío del formulario
+            surveyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (!startTime) {
+                    alert('Por favor completa la prueba de lectura antes de enviar.');
+                    return;
+                }
+
+                const formData = {
+                    age: document.getElementById('age').value,
+                    education: document.getElementById('education').value,
+                    readingTime: timer.textContent,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Guardar en localStorage
+                const allResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                allResponses.push(formData);
+                localStorage.setItem('readingSurvey', JSON.stringify(allResponses));
+
+                alert(`¡Gracias! Respuesta almacenada. Total: ${allResponses.length}`);
+                
+                // Reiniciar
+                surveyForm.reset();
+                timer.textContent = '00:00:00';
+                startBtn.disabled = false;
+                endBtn.disabled = true;
+                clearInterval(timerInterval);
+            });
+
+            // Mostrar/ocultar formulario de login
+            toggleAdminBtn.addEventListener('click', function() {
+                adminLoginForm.style.display = adminLoginForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Login de administrador
+            loginBtn.addEventListener('click', function() {
+                const password = document.getElementById('adminPassword').value;
+                if (password === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    adminPanel.style.display = 'block';
+                    adminLoginForm.style.display = 'none';
+                    alert('Acceso concedido');
+                } else {
+                    alert('Contraseña incorrecta');
+                }
+            });
+
+            // Ver respuestas
+            viewResponsesBtn.addEventListener('click', function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
+                
+                const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                if (responses.length === 0) {
+                    responsesList.innerHTML = "<p>No hay respuestas almacenadas</p>";
+                    return;
+                }
+
+                let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                responses.forEach(response => {
+                    html += `<tr>
+                        <td>${response.age}</td>
+                        <td>${response.education}</td>
+                        <td>${response.readingTime}</td>
+                        <td>${new Date(response.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                responsesList.innerHTML = html;
+            });
+
+            // Exportar respuestas
+            exportResponsesBtn.addEventListener('click', function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
+                
+                const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                if (responses.length === 0) {
+                    alert("No hay datos para exportar");
+                    return;
+                }
+
+                const dataStr = JSON.stringify(responses, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = 'respuestas-encuesta.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            });
+
+            // Borrar respuestas
+            clearResponsesBtn.addEventListener('click', function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
+                
+                if (confirm("¿Estás seguro de borrar todas las respuestas?")) {
+                    localStorage.removeItem('readingSurvey');
+                    responsesList.innerHTML = "<p>Datos borrados correctamente</p>";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
