@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Encuesta: Edad y Velocidad de Lectura</title>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,7 +33,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="number"], select, input[type="password"] {
+        input[type="number"], select, input[type="password"], input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -61,6 +62,7 @@
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
+            margin-bottom: 10px;
         }
         button:hover {
             background-color: #2980b9;
@@ -89,7 +91,7 @@
             padding: 15px;
             background-color: #f1f1f1;
             border-radius: 5px;
-            display: none; /* Oculto por defecto */
+            display: none;
         }
         #responsesList {
             max-height: 300px;
@@ -101,6 +103,29 @@
         .admin-login {
             text-align: center;
             margin: 20px 0;
+        }
+        .share-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f8f5;
+            border-radius: 5px;
+            display: none;
+        }
+        #qrcode {
+            margin: 15px auto;
+            width: 150px;
+            height: 150px;
+        }
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .copy-btn {
+            background-color: #2ecc71;
+        }
+        .share-btn {
+            background-color: #3498db;
         }
     </style>
 </head>
@@ -175,10 +200,39 @@
         <button id="viewResponses">Ver respuestas</button>
         <button id="exportResponses">Exportar datos</button>
         <button id="clearResponses">Borrar datos</button>
+        
+        <div class="share-section" id="shareSection">
+            <h3>Compartir encuesta</h3>
+            <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
+            <div class="share-buttons">
+                <button id="copyLinkBtn" class="copy-btn">Copiar enlace</button>
+                <button id="shareBtn" class="share-btn">Compartir</button>
+            </div>
+            <div id="qrcode"></div>
+        </div>
+        
         <div id="responsesList"></div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     
     <script>
+        // Configuración de Firebase (REEMPLAZA con tus propios datos)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8JHMQTBxZ_eiMSUJn9WMruFyhTIc8jxw",
+            authDomain: "encuesta-lectura.firebaseapp.com",
+            projectId: "encuesta-lectura",
+            storageBucket: "encuesta-lectura.appspot.com",
+            messagingSenderId: "488783940136",
+            appId: "1:488783940136:web:2129fd90af4a2b088d831d"
+        };
+
+        // Inicializa Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         document.addEventListener('DOMContentLoaded', function() {
             // Elementos principales
             const startBtn = document.getElementById('startBtn');
@@ -195,6 +249,11 @@
             const exportResponsesBtn = document.getElementById('exportResponses');
             const clearResponsesBtn = document.getElementById('clearResponses');
             const responsesList = document.getElementById('responsesList');
+            const shareSection = document.getElementById('shareSection');
+            const surveyLink = document.getElementById('surveyLink');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const qrcodeDiv = document.getElementById('qrcode');
             
             // Configuración (cambia esta contraseña por una segura)
             const ADMIN_PASSWORD = "admin123"; // Cambia esto por tu contraseña
@@ -247,7 +306,7 @@
             });
             
             // Manejar el envío del formulario
-            surveyForm.addEventListener('submit', function(e) {
+            surveyForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 if (!startTime) {
@@ -259,22 +318,30 @@
                     age: document.getElementById('age').value,
                     education: document.getElementById('education').value,
                     readingTime: timer.textContent,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    deviceInfo: navigator.userAgent
                 };
 
-                // Guardar en localStorage
-                const allResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                allResponses.push(formData);
-                localStorage.setItem('readingSurvey', JSON.stringify(allResponses));
-
-                alert(`¡Gracias! Respuesta almacenada. Total: ${allResponses.length}`);
-                
-                // Reiniciar
-                surveyForm.reset();
-                timer.textContent = '00:00:00';
-                startBtn.disabled = false;
-                endBtn.disabled = true;
-                clearInterval(timerInterval);
+                try {
+                    // Guardar en Firestore
+                    await db.collection("respuestas").add(formData);
+                    alert('¡Respuesta enviada correctamente!');
+                    
+                    // Reiniciar el formulario
+                    surveyForm.reset();
+                    timer.textContent = '00:00:00';
+                    startBtn.disabled = false;
+                    endBtn.disabled = true;
+                    clearInterval(timerInterval);
+                } catch (error) {
+                    console.error("Error al guardar:", error);
+                    alert('Error al enviar. Intenta nuevamente.');
+                    
+                    // Fallback a localStorage si Firestore falla
+                    const allResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    allResponses.push(formData);
+                    localStorage.setItem('readingSurvey', JSON.stringify(allResponses));
+                }
             });
 
             // Mostrar/ocultar formulario de login
@@ -290,71 +357,165 @@
                     adminPanel.style.display = 'block';
                     adminLoginForm.style.display = 'none';
                     alert('Acceso concedido');
+                    
+                    // Generar enlace y QR
+                    generateShareLink();
                 } else {
                     alert('Contraseña incorrecta');
                 }
             });
 
-            // Ver respuestas
-            viewResponsesBtn.addEventListener('click', function() {
-                if (!isAdmin) {
-                    alert('Acceso no autorizado');
-                    return;
-                }
+            // Generar enlace compartible y QR
+            function generateShareLink() {
+                const currentUrl = window.location.href.split('?')[0];
+                surveyLink.value = currentUrl;
                 
-                const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                if (responses.length === 0) {
-                    responsesList.innerHTML = "<p>No hay respuestas almacenadas</p>";
-                    return;
-                }
-
-                let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
-                responses.forEach(response => {
-                    html += `<tr>
-                        <td>${response.age}</td>
-                        <td>${response.education}</td>
-                        <td>${response.readingTime}</td>
-                        <td>${new Date(response.timestamp).toLocaleString()}</td>
-                    </tr>`;
+                // Generar código QR
+                qrcodeDiv.innerHTML = '';
+                new QRCode(qrcodeDiv, {
+                    text: currentUrl,
+                    width: 150,
+                    height: 150,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
                 });
-                html += '</table>';
-                responsesList.innerHTML = html;
+                
+                shareSection.style.display = 'block';
+            }
+
+            // Copiar enlace al portapapeles
+            copyLinkBtn.addEventListener('click', function() {
+                surveyLink.select();
+                document.execCommand('copy');
+                alert('Enlace copiado al portapapeles');
             });
 
-            // Exportar respuestas
-            exportResponsesBtn.addEventListener('click', function() {
+            // Compartir en redes sociales
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Encuesta de Velocidad de Lectura',
+                        text: 'Participa en esta encuesta sobre velocidad de lectura',
+                        url: surveyLink.value
+                    }).catch(err => {
+                        console.error('Error al compartir:', err);
+                    });
+                } else {
+                    // Fallback para navegadores que no soportan Web Share API
+                    const shareUrl = `https://twitter.com/intent/tweet?text=Participa%20en%20esta%20encuesta%20sobre%20velocidad%20de%20lectura&url=${encodeURIComponent(surveyLink.value)}`;
+                    window.open(shareUrl, '_blank');
+                }
+            });
+
+            // Ver respuestas desde Firestore
+            viewResponsesBtn.addEventListener('click', async function() {
                 if (!isAdmin) {
                     alert('Acceso no autorizado');
                     return;
                 }
                 
-                const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                if (responses.length === 0) {
-                    alert("No hay datos para exportar");
-                    return;
-                }
+                try {
+                    const querySnapshot = await db.collection("respuestas").get();
+                    let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                    
+                    querySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        html += `<tr>
+                            <td>${data.age}</td>
+                            <td>${data.education}</td>
+                            <td>${data.readingTime}</td>
+                            <td>${new Date(data.timestamp).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</table>';
+                    responsesList.innerHTML = html;
+                } catch (error) {
+                    console.error("Error al cargar respuestas:", error);
+                    alert('Error al cargar respuestas. Verifica la consola para más detalles.');
+                    
+                    // Fallback a localStorage
+                    const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    if (responses.length === 0) {
+                        responsesList.innerHTML = "<p>No hay respuestas almacenadas</p>";
+                        return;
+                    }
 
-                const dataStr = JSON.stringify(responses, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                
-                const exportFileDefaultName = 'respuestas-encuesta.json';
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
+                    let localHtml = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                    responses.forEach(response => {
+                        localHtml += `<tr>
+                            <td>${response.age}</td>
+                            <td>${response.education}</td>
+                            <td>${response.readingTime}</td>
+                            <td>${new Date(response.timestamp).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    localHtml += '</table>';
+                    responsesList.innerHTML = localHtml;
+                }
             });
 
-            // Borrar respuestas
+            // Exportar respuestas desde Firestore
+            exportResponsesBtn.addEventListener('click', async function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
+                
+                try {
+                    const querySnapshot = await db.collection("respuestas").get();
+                    const responses = [];
+                    
+                    querySnapshot.forEach(doc => {
+                        responses.push(doc.data());
+                    });
+                    
+                    if (responses.length === 0) {
+                        alert("No hay datos para exportar");
+                        return;
+                    }
+
+                    const dataStr = JSON.stringify(responses, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    
+                    const exportFileDefaultName = 'respuestas-encuesta.json';
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                } catch (error) {
+                    console.error("Error al exportar:", error);
+                    alert('Error al exportar. Verifica la consola para más detalles.');
+                    
+                    // Fallback a localStorage
+                    const localResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    if (localResponses.length === 0) {
+                        alert("No hay datos locales para exportar");
+                        return;
+                    }
+
+                    const localDataStr = JSON.stringify(localResponses, null, 2);
+                    const localDataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(localDataStr);
+                    
+                    const localLinkElement = document.createElement('a');
+                    localLinkElement.setAttribute('href', localDataUri);
+                    localLinkElement.setAttribute('download', 'respuestas-encuesta-local.json');
+                    localLinkElement.click();
+                }
+            });
+
+            // Borrar respuestas (solo de localStorage)
             clearResponsesBtn.addEventListener('click', function() {
                 if (!isAdmin) {
                     alert('Acceso no autorizado');
                     return;
                 }
                 
-                if (confirm("¿Estás seguro de borrar todas las respuestas?")) {
+                if (confirm("¿Estás seguro de borrar todas las respuestas locales?")) {
                     localStorage.removeItem('readingSurvey');
-                    responsesList.innerHTML = "<p>Datos borrados correctamente</p>";
+                    responsesList.innerHTML = "<p>Datos locales borrados correctamente</p>";
                 }
             });
         });
