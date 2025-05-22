@@ -107,9 +107,9 @@
         .share-section {
             margin-top: 20px;
             padding: 15px;
-            background-color: #e8f8f5;
+            background-color: #f9f9f9;
             border-radius: 5px;
-            display: none;
+            text-align: center;
         }
         #qrcode {
             margin: 15px auto;
@@ -118,6 +118,7 @@
         }
         .share-buttons {
             display: flex;
+            justify-content: center;
             gap: 10px;
             margin-top: 10px;
         }
@@ -126,6 +127,14 @@
         }
         .share-btn {
             background-color: #3498db;
+        }
+        .thank-you {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f8f5;
+            border-radius: 5px;
+            display: none;
         }
     </style>
 </head>
@@ -185,6 +194,22 @@
         </div>
     </form>
 
+    <!-- SECCIÓN COMPARTIR (MOVIDA AQUÍ COMO EN EL SEGUNDO CÓDIGO) -->
+    <div class="share-section" id="shareSection">
+        <h3>¡Ayuda a compartir esta encuesta!</h3>
+        <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
+        <div class="share-buttons">
+            <button id="copyLinkBtn" class="copy-btn">Copiar enlace</button>
+            <button id="shareBtn" class="share-btn">Compartir</button>
+        </div>
+        <div id="qrcode"></div>
+    </div>
+
+    <div class="thank-you" id="thankYou">
+        <h2>¡Gracias por participar!</h2>
+        <p>Tu respuesta ha sido registrada correctamente.</p>
+    </div>
+
     <!-- Panel de login para administrador -->
     <div class="admin-login">
         <button id="toggleAdminBtn">Acceso Administrador</button>
@@ -200,17 +225,6 @@
         <button id="viewResponses">Ver respuestas</button>
         <button id="exportResponses">Exportar datos</button>
         <button id="clearResponses">Borrar datos</button>
-        
-        <div class="share-section" id="shareSection">
-            <h3>Compartir encuesta</h3>
-            <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
-            <div class="share-buttons">
-                <button id="copyLinkBtn" class="copy-btn">Copiar enlace</button>
-                <button id="shareBtn" class="share-btn">Compartir</button>
-            </div>
-            <div id="qrcode"></div>
-        </div>
-        
         <div id="responsesList"></div>
     </div>
 
@@ -239,6 +253,11 @@
             const endBtn = document.getElementById('endBtn');
             const timer = document.getElementById('timer');
             const surveyForm = document.getElementById('surveyForm');
+            const thankYouDiv = document.getElementById('thankYou');
+            const surveyLink = document.getElementById('surveyLink');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const qrcodeDiv = document.getElementById('qrcode');
             
             // Elementos de administración
             const toggleAdminBtn = document.getElementById('toggleAdminBtn');
@@ -249,19 +268,34 @@
             const exportResponsesBtn = document.getElementById('exportResponses');
             const clearResponsesBtn = document.getElementById('clearResponses');
             const responsesList = document.getElementById('responsesList');
-            const shareSection = document.getElementById('shareSection');
-            const surveyLink = document.getElementById('surveyLink');
-            const copyLinkBtn = document.getElementById('copyLinkBtn');
-            const shareBtn = document.getElementById('shareBtn');
-            const qrcodeDiv = document.getElementById('qrcode');
             
-            // Configuración (cambia esta contraseña por una segura)
-            const ADMIN_PASSWORD = "admin123"; // Cambia esto por tu contraseña
+            // Configuración
+            const ADMIN_PASSWORD = "AIM0524"; // Contraseña actualizada
             
             let startTime;
             let timerInterval;
             let isAdmin = false;
             
+            // Generar enlace y QR al cargar
+            generateShareLink();
+            
+            // Función para generar enlace compartible y QR
+            function generateShareLink() {
+                const currentUrl = window.location.href.split('?')[0];
+                surveyLink.value = currentUrl;
+                
+                // Generar código QR
+                qrcodeDiv.innerHTML = '';
+                new QRCode(qrcodeDiv, {
+                    text: currentUrl,
+                    width: 150,
+                    height: 150,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+
             // Función para formatear el tiempo
             function formatTime(ms) {
                 let seconds = Math.floor(ms / 1000);
@@ -325,7 +359,10 @@
                 try {
                     // Guardar en Firestore
                     await db.collection("respuestas").add(formData);
-                    alert('¡Respuesta enviada correctamente!');
+                    
+                    // Mostrar mensaje de agradecimiento
+                    surveyForm.style.display = 'none';
+                    thankYouDiv.style.display = 'block';
                     
                     // Reiniciar el formulario
                     surveyForm.reset();
@@ -336,53 +373,8 @@
                 } catch (error) {
                     console.error("Error al guardar:", error);
                     alert('Error al enviar. Intenta nuevamente.');
-                    
-                    // Fallback a localStorage si Firestore falla
-                    const allResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                    allResponses.push(formData);
-                    localStorage.setItem('readingSurvey', JSON.stringify(allResponses));
                 }
             });
-
-            // Mostrar/ocultar formulario de login
-            toggleAdminBtn.addEventListener('click', function() {
-                adminLoginForm.style.display = adminLoginForm.style.display === 'none' ? 'block' : 'none';
-            });
-
-            // Login de administrador
-            loginBtn.addEventListener('click', function() {
-                const password = document.getElementById('adminPassword').value;
-                if (password === ADMIN_PASSWORD) {
-                    isAdmin = true;
-                    adminPanel.style.display = 'block';
-                    adminLoginForm.style.display = 'none';
-                    alert('Acceso concedido');
-                    
-                    // Generar enlace y QR
-                    generateShareLink();
-                } else {
-                    alert('Contraseña incorrecta');
-                }
-            });
-
-            // Generar enlace compartible y QR
-            function generateShareLink() {
-                const currentUrl = window.location.href.split('?')[0];
-                surveyLink.value = currentUrl;
-                
-                // Generar código QR
-                qrcodeDiv.innerHTML = '';
-                new QRCode(qrcodeDiv, {
-                    text: currentUrl,
-                    width: 150,
-                    height: 150,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-                
-                shareSection.style.display = 'block';
-            }
 
             // Copiar enlace al portapapeles
             copyLinkBtn.addEventListener('click', function() {
@@ -405,6 +397,24 @@
                     // Fallback para navegadores que no soportan Web Share API
                     const shareUrl = `https://twitter.com/intent/tweet?text=Participa%20en%20esta%20encuesta%20sobre%20velocidad%20de%20lectura&url=${encodeURIComponent(surveyLink.value)}`;
                     window.open(shareUrl, '_blank');
+                }
+            });
+
+            // Mostrar/ocultar formulario de login
+            toggleAdminBtn.addEventListener('click', function() {
+                adminLoginForm.style.display = adminLoginForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Login de administrador
+            loginBtn.addEventListener('click', function() {
+                const password = document.getElementById('adminPassword').value;
+                if (password === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    adminPanel.style.display = 'block';
+                    adminLoginForm.style.display = 'none';
+                    alert('Acceso concedido');
+                } else {
+                    alert('Contraseña incorrecta');
                 }
             });
 
@@ -434,25 +444,6 @@
                 } catch (error) {
                     console.error("Error al cargar respuestas:", error);
                     alert('Error al cargar respuestas. Verifica la consola para más detalles.');
-                    
-                    // Fallback a localStorage
-                    const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                    if (responses.length === 0) {
-                        responsesList.innerHTML = "<p>No hay respuestas almacenadas</p>";
-                        return;
-                    }
-
-                    let localHtml = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
-                    responses.forEach(response => {
-                        localHtml += `<tr>
-                            <td>${response.age}</td>
-                            <td>${response.education}</td>
-                            <td>${response.readingTime}</td>
-                            <td>${new Date(response.timestamp).toLocaleString()}</td>
-                        </tr>`;
-                    });
-                    localHtml += '</table>';
-                    responsesList.innerHTML = localHtml;
                 }
             });
 
@@ -488,21 +479,6 @@
                 } catch (error) {
                     console.error("Error al exportar:", error);
                     alert('Error al exportar. Verifica la consola para más detalles.');
-                    
-                    // Fallback a localStorage
-                    const localResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
-                    if (localResponses.length === 0) {
-                        alert("No hay datos locales para exportar");
-                        return;
-                    }
-
-                    const localDataStr = JSON.stringify(localResponses, null, 2);
-                    const localDataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(localDataStr);
-                    
-                    const localLinkElement = document.createElement('a');
-                    localLinkElement.setAttribute('href', localDataUri);
-                    localLinkElement.setAttribute('download', 'respuestas-encuesta-local.json');
-                    localLinkElement.click();
                 }
             });
 
