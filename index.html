@@ -18,6 +18,13 @@
             color: #2c3e50;
             text-align: center;
         }
+        .welcome-message {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
         .instructions {
             background-color: #f8f9fa;
             padding: 15px;
@@ -141,6 +148,13 @@
 <body>
     <h1>Encuesta: Edad y Velocidad de Lectura</h1>
     
+    <!-- PORTADA NUEVA -->
+    <div class="welcome-message">
+        <p>Estimados participantes:</p>
+        <p>Soy estudiante del Programa del Diploma del Bachillerato Internacional y estoy realizando una Evaluación Interna en la asignatura de Matemáticas: Aplicaciones e Interpretación. El objetivo de este estudio es explorar la relación entre la edad y la velocidad de lectura mediante un breve ejercicio de lectura cronometrado y una pequeña encuesta.</p>
+        <p>Su participación es completamente voluntaria y los datos obtenidos se utilizarán únicamente con fines académicos y serán tratados de forma anónima. Les agradezco de antemano su valiosa colaboración.</p>
+    </div>
+    
     <div class="instructions">
         <h2>Instrucciones:</h2>
         <p>Esta breve encuesta interactiva! Estamos investigando cómo la edad influye en la velocidad de lectura. Este es un proyecto educativo para explorar las capacidades de lectura de personas de diferentes edades.</p>
@@ -173,12 +187,12 @@
             </select>
         </div>
 
-        <!-- NUEVAS PREGUNTAS AÑADIDAS -->
+        <!-- NUEVAS PREGUNTAS ABIERTAS -->
         <div class="form-group">
             <label for="hoursPerDay">¿Cuántas horas promedio lee al día?</label>
             <input type="number" id="hoursPerDay" name="hoursPerDay" min="0" max="24" step="0.5" required>
         </div>
-
+        
         <div class="form-group">
             <label for="timesPerWeek">¿Cuántas veces lee a la semana?</label>
             <input type="number" id="timesPerWeek" name="timesPerWeek" min="0" max="7" required>
