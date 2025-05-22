@@ -146,7 +146,7 @@
         <p>Esta breve encuesta interactiva! Estamos investigando cómo la edad influye en la velocidad de lectura. Este es un proyecto educativo para explorar las capacidades de lectura de personas de diferentes edades.</p>
         <ol>
             <li>Asegúrate de estar en un lugar tranquilo y sin distracciones.</li>
-            <li>Responder ambas preguntas</li>
+            <li>Responder todas las preguntas</li>
             <li>Lee el texto tan rápido y claramente como puedas, pero sin saltarte palabras.</li>
             <li>Pulsa "Iniciar" para empezar el cronometro y luego haz clic en "Finalizar" tan pronto como termines de leer.</li>
         </ol>
@@ -172,6 +172,17 @@
                 <option value="Postgrado">Postgrado</option>
             </select>
         </div>
+
+        <!-- NUEVAS PREGUNTAS AÑADIDAS -->
+        <div class="form-group">
+            <label for="hoursPerDay">¿Cuántas horas promedio lee al día?</label>
+            <input type="number" id="hoursPerDay" name="hoursPerDay" min="0" max="24" step="0.5" required>
+        </div>
+
+        <div class="form-group">
+            <label for="timesPerWeek">¿Cuántas veces lee a la semana?</label>
+            <input type="number" id="timesPerWeek" name="timesPerWeek" min="0" max="7" required>
+        </div>
         
         <div class="reading-section">
             <h2>Prueba de lectura</h2>
@@ -194,7 +205,7 @@
         </div>
     </form>
 
-    <!-- SECCIÓN COMPARTIR (MOVIDA AQUÍ COMO EN EL SEGUNDO CÓDIGO) -->
+    <!-- Sección para compartir -->
     <div class="share-section" id="shareSection">
         <h3>¡Ayuda a compartir esta encuesta!</h3>
         <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
@@ -311,9 +322,11 @@
             startBtn.addEventListener('click', function() {
                 const age = document.getElementById('age').value;
                 const education = document.getElementById('education').value;
+                const hoursPerDay = document.getElementById('hoursPerDay').value;
+                const timesPerWeek = document.getElementById('timesPerWeek').value;
                 
-                if (!age || !education) {
-                    alert('Por favor responde las preguntas sobre edad y nivel académico antes de comenzar.');
+                if (!age || !education || !hoursPerDay || !timesPerWeek) {
+                    alert('Por favor responde todas las preguntas antes de comenzar.');
                     return;
                 }
                 
@@ -351,6 +364,8 @@
                 const formData = {
                     age: document.getElementById('age').value,
                     education: document.getElementById('education').value,
+                    hoursPerDay: document.getElementById('hoursPerDay').value,
+                    timesPerWeek: document.getElementById('timesPerWeek').value,
                     readingTime: timer.textContent,
                     timestamp: new Date().toISOString(),
                     deviceInfo: navigator.userAgent
@@ -427,13 +442,15 @@
                 
                 try {
                     const querySnapshot = await db.collection("respuestas").get();
-                    let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                    let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Horas/día</th><th>Veces/semana</th><th>Tiempo</th><th>Fecha</th></tr>';
                     
                     querySnapshot.forEach(doc => {
                         const data = doc.data();
                         html += `<tr>
                             <td>${data.age}</td>
                             <td>${data.education}</td>
+                            <td>${data.hoursPerDay}</td>
+                            <td>${data.timesPerWeek}</td>
                             <td>${data.readingTime}</td>
                             <td>${new Date(data.timestamp).toLocaleString()}</td>
                         </tr>`;
@@ -497,4 +514,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
