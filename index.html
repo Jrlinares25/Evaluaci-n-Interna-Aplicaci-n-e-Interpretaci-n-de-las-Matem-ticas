@@ -349,6 +349,110 @@
                 }
             });
         });
+    </script> <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta: Edad y Velocidad de Lectura</title>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <style>
+        /* Estilos anteriores... (se mantienen igual) */
+        .admin-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            display: none; /* Oculto por defecto */
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenido anterior (formulario, sección compartir)... -->
+
+    <!-- Panel de login para administrador (NUEVO) -->
+    <div class="admin-login">
+        <button id="toggleAdminBtn">Acceso Administrador</button>
+        <div id="adminLoginForm" style="display:none; margin-top:10px;">
+            <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
+            <button id="loginBtn">Acceder</button>
+        </div>
+    </div>
+
+    <!-- Panel de administración (oculto hasta login) -->
+    <div class="admin-panel" id="adminPanel">
+        <h2>Panel de Administración</h2>
+        <button id="viewResponses">Ver respuestas</button>
+        <button id="exportResponses">Exportar datos</button>
+        <div id="responsesList"></div>
+    </div>
+
+    <!-- Firebase SDK y script... -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... código anterior ...
+
+            // CONFIGURACIÓN ADMIN (NUEVO)
+            const ADMIN_PASSWORD = "AIM0524"; // Tu contraseña personalizada
+            
+            // Elementos admin
+            const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            const adminPanel = document.getElementById('adminPanel');
+            const loginBtn = document.getElementById('loginBtn');
+            const viewResponsesBtn = document.getElementById('viewResponses');
+            const exportResponsesBtn = document.getElementById('exportResponses');
+            const responsesList = document.getElementById('responsesList');
+
+            // Mostrar/ocultar login admin
+            toggleAdminBtn.addEventListener('click', function() {
+                adminLoginForm.style.display = adminLoginForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Validar contraseña admin
+            loginBtn.addEventListener('click', function() {
+                if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+                    adminPanel.style.display = 'block';
+                    adminLoginForm.style.display = 'none';
+                } else {
+                    alert('Contraseña incorrecta');
+                }
+            });
+
+            // Ver respuestas desde Firestore
+            viewResponsesBtn.addEventListener('click', async function() {
+                const querySnapshot = await db.collection("respuestas").get();
+                let html = '<table border="1"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `<tr>
+                        <td>${data.age}</td>
+                        <td>${data.education}</td>
+                        <td>${data.readingTime}</td>
+                        <td>${new Date(data.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                responsesList.innerHTML = html + '</table>';
+            });
+
+            // Exportar datos
+            exportResponsesBtn.addEventListener('click', async function() {
+                const querySnapshot = await db.collection("respuestas").get();
+                const data = querySnapshot.docs.map(doc => doc.data());
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'respuestas-encuesta.json';
+                a.click();
+            });
+        });
     </script>
+</body>
+</html>
 </body>
 </html>
