@@ -33,7 +33,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="number"], select, input[type="text"] {
+        input[type="number"], select, input[type="password"], input[type="text"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -86,20 +86,30 @@
             gap: 10px;
             margin-bottom: 15px;
         }
-        .thank-you {
-            text-align: center;
-            margin: 20px 0;
+        .admin-panel {
+            margin-top: 30px;
             padding: 15px;
-            background-color: #e8f8f5;
+            background-color: #f1f1f1;
             border-radius: 5px;
             display: none;
+        }
+        #responsesList {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .admin-login {
+            text-align: center;
+            margin: 20px 0;
         }
         .share-section {
             margin-top: 20px;
             padding: 15px;
-            background-color: #f9f9f9;
+            background-color: #e8f8f5;
             border-radius: 5px;
-            text-align: center;
+            display: none;
         }
         #qrcode {
             margin: 15px auto;
@@ -108,7 +118,6 @@
         }
         .share-buttons {
             display: flex;
-            justify-content: center;
             gap: 10px;
             margin-top: 10px;
         }
@@ -176,20 +185,33 @@
         </div>
     </form>
 
-    <!-- Sección para compartir (siempre visible) -->
-    <div class="share-section" id="shareSection">
-        <h3>¡Ayuda a compartir esta encuesta!</h3>
-        <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
-        <div class="share-buttons">
-            <button id="copyLinkBtn" class="copy-btn">Copiar enlace</button>
-            <button id="shareBtn" class="share-btn">Compartir</button>
+    <!-- Panel de login para administrador -->
+    <div class="admin-login">
+        <button id="toggleAdminBtn">Acceso Administrador</button>
+        <div id="adminLoginForm" style="display:none; margin-top:10px;">
+            <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
+            <button id="loginBtn">Acceder</button>
         </div>
-        <div id="qrcode"></div>
     </div>
 
-    <div class="thank-you" id="thankYou">
-        <h2>¡Gracias por participar!</h2>
-        <p>Tu respuesta ha sido registrada correctamente.</p>
+    <!-- Panel de administración (oculto hasta login) -->
+    <div class="admin-panel" id="adminPanel">
+        <h2>Panel de Administración</h2>
+        <button id="viewResponses">Ver respuestas</button>
+        <button id="exportResponses">Exportar datos</button>
+        <button id="clearResponses">Borrar datos</button>
+        
+        <div class="share-section" id="shareSection">
+            <h3>Compartir encuesta</h3>
+            <input type="text" id="surveyLink" readonly style="width:100%; margin-bottom:10px;">
+            <div class="share-buttons">
+                <button id="copyLinkBtn" class="copy-btn">Copiar enlace</button>
+                <button id="shareBtn" class="share-btn">Compartir</button>
+            </div>
+            <div id="qrcode"></div>
+        </div>
+        
+        <div id="responsesList"></div>
     </div>
 
     <!-- Firebase SDK -->
@@ -197,7 +219,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     
     <script>
-        // Configuración de Firebase (REEMPLAZA con tus datos)
+        // Configuración de Firebase (REEMPLAZA con tus propios datos)
         const firebaseConfig = {
             apiKey: "AIzaSyD8JHMQTBxZ_eiMSUJn9WMruFyhTIc8jxw",
             authDomain: "encuesta-lectura.firebaseapp.com",
@@ -212,63 +234,34 @@
         const db = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Elementos principales
             const startBtn = document.getElementById('startBtn');
             const endBtn = document.getElementById('endBtn');
             const timer = document.getElementById('timer');
             const surveyForm = document.getElementById('surveyForm');
-            const thankYouDiv = document.getElementById('thankYou');
+            
+            // Elementos de administración
+            const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            const adminPanel = document.getElementById('adminPanel');
+            const loginBtn = document.getElementById('loginBtn');
+            const viewResponsesBtn = document.getElementById('viewResponses');
+            const exportResponsesBtn = document.getElementById('exportResponses');
+            const clearResponsesBtn = document.getElementById('clearResponses');
+            const responsesList = document.getElementById('responsesList');
+            const shareSection = document.getElementById('shareSection');
             const surveyLink = document.getElementById('surveyLink');
             const copyLinkBtn = document.getElementById('copyLinkBtn');
             const shareBtn = document.getElementById('shareBtn');
             const qrcodeDiv = document.getElementById('qrcode');
             
+            // Configuración (cambia esta contraseña por una segura)
+            const ADMIN_PASSWORD = "admin123"; // Cambia esto por tu contraseña
+            
             let startTime;
             let timerInterval;
+            let isAdmin = false;
             
-            // Generar enlace y QR al cargar la página
-            generateShareLink();
-            
-            // Función para generar enlace compartible y QR
-            function generateShareLink() {
-                const currentUrl = window.location.href.split('?')[0];
-                surveyLink.value = currentUrl;
-                
-                // Generar código QR
-                qrcodeDiv.innerHTML = '';
-                new QRCode(qrcodeDiv, {
-                    text: currentUrl,
-                    width: 150,
-                    height: 150,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            }
-
-            // Copiar enlace al portapapeles
-            copyLinkBtn.addEventListener('click', function() {
-                surveyLink.select();
-                document.execCommand('copy');
-                alert('Enlace copiado al portapapeles');
-            });
-
-            // Compartir en redes sociales
-            shareBtn.addEventListener('click', function() {
-                if (navigator.share) {
-                    navigator.share({
-                        title: 'Encuesta de Velocidad de Lectura',
-                        text: 'Participa en esta encuesta sobre velocidad de lectura',
-                        url: surveyLink.value
-                    }).catch(err => {
-                        console.error('Error al compartir:', err);
-                    });
-                } else {
-                    // Fallback para navegadores que no soportan Web Share API
-                    const shareUrl = `https://twitter.com/intent/tweet?text=Participa%20en%20esta%20encuesta%20sobre%20velocidad%20de%20lectura&url=${encodeURIComponent(surveyLink.value)}`;
-                    window.open(shareUrl, '_blank');
-                }
-            });
-
             // Función para formatear el tiempo
             function formatTime(ms) {
                 let seconds = Math.floor(ms / 1000);
@@ -332,10 +325,7 @@
                 try {
                     // Guardar en Firestore
                     await db.collection("respuestas").add(formData);
-                    
-                    // Mostrar mensaje de agradecimiento
-                    surveyForm.style.display = 'none';
-                    thankYouDiv.style.display = 'block';
+                    alert('¡Respuesta enviada correctamente!');
                     
                     // Reiniciar el formulario
                     surveyForm.reset();
@@ -346,113 +336,189 @@
                 } catch (error) {
                     console.error("Error al guardar:", error);
                     alert('Error al enviar. Intenta nuevamente.');
+                    
+                    // Fallback a localStorage si Firestore falla
+                    const allResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    allResponses.push(formData);
+                    localStorage.setItem('readingSurvey', JSON.stringify(allResponses));
                 }
             });
-        });
-    </script> <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuesta: Edad y Velocidad de Lectura</title>
-    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
-    <style>
-        /* Estilos anteriores... (se mantienen igual) */
-        .admin-panel {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f1f1f1;
-            border-radius: 5px;
-            display: none; /* Oculto por defecto */
-        }
-    </style>
-</head>
-<body>
-    <!-- Contenido anterior (formulario, sección compartir)... -->
 
-    <!-- Panel de login para administrador (NUEVO) -->
-    <div class="admin-login">
-        <button id="toggleAdminBtn">Acceso Administrador</button>
-        <div id="adminLoginForm" style="display:none; margin-top:10px;">
-            <input type="password" id="adminPassword" placeholder="Contraseña de administrador">
-            <button id="loginBtn">Acceder</button>
-        </div>
-    </div>
-
-    <!-- Panel de administración (oculto hasta login) -->
-    <div class="admin-panel" id="adminPanel">
-        <h2>Panel de Administración</h2>
-        <button id="viewResponses">Ver respuestas</button>
-        <button id="exportResponses">Exportar datos</button>
-        <div id="responsesList"></div>
-    </div>
-
-    <!-- Firebase SDK y script... -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // ... código anterior ...
-
-            // CONFIGURACIÓN ADMIN (NUEVO)
-            const ADMIN_PASSWORD = "AIM0524"; // Tu contraseña personalizada
-            
-            // Elementos admin
-            const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-            const adminLoginForm = document.getElementById('adminLoginForm');
-            const adminPanel = document.getElementById('adminPanel');
-            const loginBtn = document.getElementById('loginBtn');
-            const viewResponsesBtn = document.getElementById('viewResponses');
-            const exportResponsesBtn = document.getElementById('exportResponses');
-            const responsesList = document.getElementById('responsesList');
-
-            // Mostrar/ocultar login admin
+            // Mostrar/ocultar formulario de login
             toggleAdminBtn.addEventListener('click', function() {
                 adminLoginForm.style.display = adminLoginForm.style.display === 'none' ? 'block' : 'none';
             });
 
-            // Validar contraseña admin
+            // Login de administrador
             loginBtn.addEventListener('click', function() {
-                if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+                const password = document.getElementById('adminPassword').value;
+                if (password === ADMIN_PASSWORD) {
+                    isAdmin = true;
                     adminPanel.style.display = 'block';
                     adminLoginForm.style.display = 'none';
+                    alert('Acceso concedido');
+                    
+                    // Generar enlace y QR
+                    generateShareLink();
                 } else {
                     alert('Contraseña incorrecta');
                 }
             });
 
-            // Ver respuestas desde Firestore
-            viewResponsesBtn.addEventListener('click', async function() {
-                const querySnapshot = await db.collection("respuestas").get();
-                let html = '<table border="1"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+            // Generar enlace compartible y QR
+            function generateShareLink() {
+                const currentUrl = window.location.href.split('?')[0];
+                surveyLink.value = currentUrl;
                 
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    html += `<tr>
-                        <td>${data.age}</td>
-                        <td>${data.education}</td>
-                        <td>${data.readingTime}</td>
-                        <td>${new Date(data.timestamp).toLocaleString()}</td>
-                    </tr>`;
+                // Generar código QR
+                qrcodeDiv.innerHTML = '';
+                new QRCode(qrcodeDiv, {
+                    text: currentUrl,
+                    width: 150,
+                    height: 150,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
                 });
                 
-                responsesList.innerHTML = html + '</table>';
+                shareSection.style.display = 'block';
+            }
+
+            // Copiar enlace al portapapeles
+            copyLinkBtn.addEventListener('click', function() {
+                surveyLink.select();
+                document.execCommand('copy');
+                alert('Enlace copiado al portapapeles');
             });
 
-            // Exportar datos
+            // Compartir en redes sociales
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Encuesta de Velocidad de Lectura',
+                        text: 'Participa en esta encuesta sobre velocidad de lectura',
+                        url: surveyLink.value
+                    }).catch(err => {
+                        console.error('Error al compartir:', err);
+                    });
+                } else {
+                    // Fallback para navegadores que no soportan Web Share API
+                    const shareUrl = `https://twitter.com/intent/tweet?text=Participa%20en%20esta%20encuesta%20sobre%20velocidad%20de%20lectura&url=${encodeURIComponent(surveyLink.value)}`;
+                    window.open(shareUrl, '_blank');
+                }
+            });
+
+            // Ver respuestas desde Firestore
+            viewResponsesBtn.addEventListener('click', async function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
+                
+                try {
+                    const querySnapshot = await db.collection("respuestas").get();
+                    let html = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                    
+                    querySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        html += `<tr>
+                            <td>${data.age}</td>
+                            <td>${data.education}</td>
+                            <td>${data.readingTime}</td>
+                            <td>${new Date(data.timestamp).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</table>';
+                    responsesList.innerHTML = html;
+                } catch (error) {
+                    console.error("Error al cargar respuestas:", error);
+                    alert('Error al cargar respuestas. Verifica la consola para más detalles.');
+                    
+                    // Fallback a localStorage
+                    const responses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    if (responses.length === 0) {
+                        responsesList.innerHTML = "<p>No hay respuestas almacenadas</p>";
+                        return;
+                    }
+
+                    let localHtml = '<table border="1" style="width:100%;"><tr><th>Edad</th><th>Nivel</th><th>Tiempo</th><th>Fecha</th></tr>';
+                    responses.forEach(response => {
+                        localHtml += `<tr>
+                            <td>${response.age}</td>
+                            <td>${response.education}</td>
+                            <td>${response.readingTime}</td>
+                            <td>${new Date(response.timestamp).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    localHtml += '</table>';
+                    responsesList.innerHTML = localHtml;
+                }
+            });
+
+            // Exportar respuestas desde Firestore
             exportResponsesBtn.addEventListener('click', async function() {
-                const querySnapshot = await db.collection("respuestas").get();
-                const data = querySnapshot.docs.map(doc => doc.data());
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
                 
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
+                try {
+                    const querySnapshot = await db.collection("respuestas").get();
+                    const responses = [];
+                    
+                    querySnapshot.forEach(doc => {
+                        responses.push(doc.data());
+                    });
+                    
+                    if (responses.length === 0) {
+                        alert("No hay datos para exportar");
+                        return;
+                    }
+
+                    const dataStr = JSON.stringify(responses, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    
+                    const exportFileDefaultName = 'respuestas-encuesta.json';
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                } catch (error) {
+                    console.error("Error al exportar:", error);
+                    alert('Error al exportar. Verifica la consola para más detalles.');
+                    
+                    // Fallback a localStorage
+                    const localResponses = JSON.parse(localStorage.getItem('readingSurvey')) || [];
+                    if (localResponses.length === 0) {
+                        alert("No hay datos locales para exportar");
+                        return;
+                    }
+
+                    const localDataStr = JSON.stringify(localResponses, null, 2);
+                    const localDataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(localDataStr);
+                    
+                    const localLinkElement = document.createElement('a');
+                    localLinkElement.setAttribute('href', localDataUri);
+                    localLinkElement.setAttribute('download', 'respuestas-encuesta-local.json');
+                    localLinkElement.click();
+                }
+            });
+
+            // Borrar respuestas (solo de localStorage)
+            clearResponsesBtn.addEventListener('click', function() {
+                if (!isAdmin) {
+                    alert('Acceso no autorizado');
+                    return;
+                }
                 
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'respuestas-encuesta.json';
-                a.click();
+                if (confirm("¿Estás seguro de borrar todas las respuestas locales?")) {
+                    localStorage.removeItem('readingSurvey');
+                    responsesList.innerHTML = "<p>Datos locales borrados correctamente</p>";
+                }
             });
         });
     </script>
-</body>
-</html>
 </body>
 </html>
